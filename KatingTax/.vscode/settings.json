@@ -1,0 +1,9 @@
+{
+    "files.associations": {
+        "main.h": "c",
+        "func_for_server.h": "c",
+        "socket.h": "c",
+        "string.h": "c",
+        "stdio.h": "c"
+    }
+}
