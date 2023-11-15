@@ -42,16 +42,15 @@ int main(int argc, char *argv[]) {
     char message[BUFFER] = {0};
     if (strlen(message) != 0) {
       if (sendto(client, message, strlen(message), 0,
-                 (struct sockaddr *)&serv_addr, address_length) == -1) {
+                 (struct sockaddr *)&serv_addr, address_length) < 0) {
         perror("п: Ошибка sendto client");
         exit(1);
       }
-      printf("п: Message \"%s\" sent\n", message);
     }
 
     memset(buffer, 0, BUFFER);
     if (recvfrom(client, buffer, BUFFER, 0, (struct sockaddr *)&serv_addr,
-                 &address_length) == -1) {
+                 &address_length) < 0) {
       perror("п: Ошибка recvfrom");
       exit(1);
     }
@@ -60,6 +59,9 @@ int main(int argc, char *argv[]) {
       printf("п: Message from server: %s\n", buffer);
     }
     if (strcmp(buffer, "Подходящей машины нет, попробуйте позже") == 0) {
+      continue;
+    }
+    if (strcmp(buffer, "Поездка завершена") == 0) {
       continue;
     }
   }

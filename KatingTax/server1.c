@@ -37,7 +37,7 @@ int driver_in_the_database(drivers *head, char *holding_message) {
   h_number_car = strtok(NULL, sep);
 
   while (p != NULL) {
-    if ((strcmp(h_name_driver, p->driver_name) == 0) &&
+    if ((strcmp(h_name_driver, p->driver_name) == 0) && (p->socket_d == 0) &&
         (strcmp(h_number_car, p->number_car)) == 0) {
       return p->number;
       break;
@@ -169,7 +169,7 @@ int main() {
     exit(1);
   }
 
-  timeout.tv_sec = 10;
+  timeout.tv_sec = 2;
   timeout.tv_usec = 0;
   FD_ZERO(&read_fds);
   FD_SET(client, &read_fds);
@@ -237,6 +237,8 @@ int main() {
         continue;
 
       case 2:
+
+        print_list(head_d);
         passengers *p = head_p;
         p->socket_p = client;
         char *street_where_p = strtok(NULL, ".");
@@ -247,9 +249,7 @@ int main() {
           perror("c: Ошибка send");
           exit(1);
         }
-        sleep(2);
         drivers *d = research_driver(head_d, street_where_p);
-
         if (d == NULL) {
           if (send(p->socket_p, "Подходящей машины нет, попробуйте позже",
                    BUFFER, 0) == -1) {
@@ -266,16 +266,19 @@ int main() {
             perror("c: Ошибка send");
             exit(1);
           }
-          memset(receive_message, 0, sizeof(receive_message));
-          if (recv(d->socket_d, receive_message, BUFFER, 0) == -1) {
+
+          if (recv(d->socket_d, receive_message, BUFFER, 0) < 0) {
             perror("c: Ошибка recv");
             exit(1);
           }
 
-          printf("1212312receive_message = %s от %d\n", receive_message,
-                 client);
           if (strcmp(receive_message, "Заказ подтверждаю") == 0) {
+            printf("%s заказ подтвердил\n", d->driver_name);
             d->status = 0;
+            printf("Поездка началась, статус водителя %s :%c\n", d->driver_name,
+                   d->status);
+
+            print_list(head_d);
             char message[BUFFER];
             snprintf(message, sizeof message, "Вас повезет %s, номер машины %s",
                      d->driver_name, d->number_car);
@@ -285,31 +288,39 @@ int main() {
               exit(1);
             }
             int trip = poezdka(d);
-            print_list(head_d);
 
             memset(receive_message, 0, sizeof(receive_message));
             if (recv(d->socket_d, receive_message, BUFFER, 0) == -1) {
               perror("c: Ошибка recv");
               exit(1);
             }
-          }
-          continue;
-
-          default:
-            if (close(client) == -1) {
-              perror("c: Ошибка close client");
-              exit(1);
+            if (strcmp(receive_message, "Поездка завершена") == 0) {
+              d->status = 1;
+              if (send(p->socket_p, "Поездка завершена", BUFFER, 0) == -1) {
+                perror("c: Ошибка send");
+                exit(1);
+              }
+              printf("Поездка закончена, статус водителя %c\n", d->status);
             }
-            break;
+          }
         }
-        print_list(head_d);
-    }
 
-    if (close(server) == -1) {
-      perror("c: Ошибка close server");
-      exit(1);
+        continue;
+
+      default:
+        if (close(client) == -1) {
+          perror("c: Ошибка close client");
+          exit(1);
+        }
+        break;
     }
-    printf("c: finish\n");
-    return 0;
+    print_list(head_d);
   }
+
+  if (close(server) == -1) {
+    perror("c: Ошибка close server");
+    exit(1);
+  }
+  printf("c: finish\n");
+  return 0;
 }
