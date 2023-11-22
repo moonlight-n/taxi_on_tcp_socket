@@ -19,4 +19,4 @@ passengers.o : passengers.c
 	gcc -c -g -Wall -Wextra -std=c99 passengers.c
 	
 clean:
-	rm -f server1 driver passengers *.o
+	rm -f server driver passengers *.o
