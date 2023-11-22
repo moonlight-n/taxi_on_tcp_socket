@@ -11,24 +11,24 @@ sleep 1
 sleep 1
 ./driver Арсен о456го &
 sleep 1
-./driver Геннадий х777хх&
-sleep 1
-./driver Галина у511ум &
+#./driver Геннадий х777хх&
+#sleep 1
+#./driver Галина у511ум &
 sleep 4
 ./passengers A &
-sleep 4
+#sleep 4
 ./passengers A &
-sleep 14
-./passengers B &
-sleep 13 
-./passengers A &
-sleep 12
-./passengers A &
-sleep 11 
-./passengers B &
-sleep 1 
-./passengers B &
-sleep 1 
-./passengers A 
+#sleep 14
+#./passengers B &
+#sleep 13 
+#./passengers A &
+#sleep 12
+#./passengers A &
+#sleep 11 
+#./passengers B &
+#sleep 1 
+#./passengers B &
+#sleep 1 
+#./passengers A 
 
 exit 0;

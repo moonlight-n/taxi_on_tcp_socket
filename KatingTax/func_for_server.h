@@ -25,7 +25,10 @@ typedef struct drivers_s {
 typedef struct passenger_s {
   char street_p[4];  // улица с которой уезжает пассажир
   int socket_p;      // сокет пассажира
+  int whos_driving_me;  // сохранение водителя, который вез
   struct passengers_s *next;
 } passengers;
+
+#define max(x, y) ((x) > (y) ? (x) : (y))
 
 #endif /*FUNC_FOR_SERVER_H*/

@@ -44,9 +44,9 @@ int main(int argc, char *argv[]) {
     }
     if (strlen(buffer) != 0) {
       printf("в: Message from server: %s\n", buffer);
-      if (strcmp(buffer, "В базе нет такого водителя") == 0) {
-        break;
-      }
+    }
+    if (strcmp(buffer, "В базе нет такого водителя") == 0) {
+      break;
     }
 
     if (strcmp(buffer, "Для вас есть заказ, ждём подтверждения") == 0) {
@@ -55,11 +55,13 @@ int main(int argc, char *argv[]) {
         perror("в: Ошибка sendto client");
         exit(1);
       }
-      sleep(5);
-      if (sendto(client, "Поездка завершена", BUFFER, 0,
+      sleep(10);
+      if (sendto(client, "3.Поездка завершена", BUFFER, 0,
                  (struct sockaddr *)&serv_addr, address_length) < 0) {
         perror("в: Ошибка sendto client");
         exit(1);
+      } else {
+        printf("B: trip is donen\n");
       }
     }
   }

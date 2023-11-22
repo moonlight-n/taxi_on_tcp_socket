@@ -101,6 +101,7 @@ passengers *create_p() {
   p->next = NULL;
   snprintf(p->street_p, sizeof(p->street_p), " ");
   p->socket_p = 0;
+  p->whos_driving_me = 0;
   return head;
 }
 
@@ -108,10 +109,11 @@ void print_list_pass(passengers *head) {
   passengers *p = head;
   int i = 1;
   while (p != NULL) {
-    printf("\t\t пассажиры \t\t");
-    printf("%d.", i);
+    printf("\n\t\t пассажиры \t\t\n");
+    printf("%d. ", i);
     printf("%s \t", p->street_p);
-    printf("%d \n", p->socket_p);
+    printf("%d \t", p->socket_p);
+    printf("%d \n", p->whos_driving_me);
     // шагнуть вперед !!!
     p = p->next;
     i = i + 1;
@@ -149,6 +151,7 @@ int main() {
   fd_set read_fds;
   struct timeval timeout;
   int ret = 0;
+  int max_socket = 0;
 
   if ((server = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
     perror("с: Проблема с созданием сокета");
@@ -169,30 +172,55 @@ int main() {
     exit(1);
   }
 
-  timeout.tv_sec = 2;
-  timeout.tv_usec = 0;
-  FD_ZERO(&read_fds);
-  FD_SET(client, &read_fds);
-
-  if ((ret = select(client + 1, &read_fds, NULL, NULL, &timeout)) == -1) {
-    perror("c: select ошибка");
-    exit(1);
-  };
-
   if (listen(server, 20) == -1) {
     perror("c: Проблема с listen");
     exit(1);
   }
 
   while (1) {
-    if ((client = accept(server, (struct sockaddr *)&client_addr,
-                         &address_length)) == -1) {
-      perror("c: Accept ошибка");
-      exit(1);
+    timeout.tv_sec = 2;
+    timeout.tv_usec = 0;
+    max_socket = 0;
+    FD_ZERO(&read_fds);
+    // FD_SET(client, &read_fds);
+    // if (max_socket < client) max_socket = client;
+    FD_SET(server, &read_fds);
+    max_socket = max(max_socket, server);
+    drivers *d = head_d;
+    while (d != NULL) {
+      if (d->socket_d != 0) {
+        FD_SET(d->socket_d, &read_fds);
+        max_socket = max(max_socket, d->socket_d);
+      }
+      d = d->next;
     }
 
-    printf("Подключился клиент новый клиент [%s]!\n",
-           inet_ntoa(client_addr.sin_addr));
+    if ((ret = select(max_socket + 1, &read_fds, NULL, NULL, &timeout)) == -1) {
+      perror("c: select ошибка");
+      exit(1);
+    } else if (ret == 0) {
+      continue;
+    }
+
+    if (FD_ISSET(server, &read_fds)) {
+      if ((client = accept(server, (struct sockaddr *)&client_addr,
+                           &address_length)) == -1) {
+        perror("c: Accept ошибка");
+        exit(1);
+      }
+
+      printf("Подключился клиент новый клиент [%s]!\n",
+             inet_ntoa(client_addr.sin_addr));
+    } else {
+      drivers *d = head_d;
+      while (d != NULL) {
+        if (d->socket_d != 0 && FD_ISSET(d->socket_d, &read_fds)) {
+          client = d->socket_d;
+          break;
+        }
+        d = d->next;
+      }
+    }
 
     memset(receive_message, 0, sizeof(receive_message));
     if (recv(client, receive_message, BUFFER, 0) == -1) {
@@ -237,7 +265,6 @@ int main() {
         continue;
 
       case 2:
-
         print_list(head_d);
         passengers *p = head_p;
         p->socket_p = client;
@@ -266,16 +293,15 @@ int main() {
             perror("c: Ошибка send");
             exit(1);
           }
-
-          if (recv(d->socket_d, receive_message, BUFFER, 0) < 0) {
+          if (recv(d->socket_d, receive_message, BUFFER, 0) == -1) {
             perror("c: Ошибка recv");
             exit(1);
           }
-
           if (strcmp(receive_message, "Заказ подтверждаю") == 0) {
             printf("%s заказ подтвердил\n", d->driver_name);
             d->status = 0;
-            printf("Поездка началась, статус водителя %s :%c\n", d->driver_name,
+            p->whos_driving_me = d->socket_d;
+            printf("Поездка началась, статус водителя %s :%d\n", d->driver_name,
                    d->status);
 
             print_list(head_d);
@@ -287,24 +313,17 @@ int main() {
               perror("c: Ошибка send");
               exit(1);
             }
-            int trip = poezdka(d);
-
-            memset(receive_message, 0, sizeof(receive_message));
-            if (recv(d->socket_d, receive_message, BUFFER, 0) == -1) {
-              perror("c: Ошибка recv");
-              exit(1);
-            }
-            if (strcmp(receive_message, "Поездка завершена") == 0) {
-              d->status = 1;
-              if (send(p->socket_p, "Поездка завершена", BUFFER, 0) == -1) {
-                perror("c: Ошибка send");
-                exit(1);
-              }
-              printf("Поездка закончена, статус водителя %c\n", d->status);
-            }
           }
+          print_list(head_d);
+          print_list_pass(head_p);
         }
+        continue;
 
+      case 3:
+        int trip = poezdka(d);
+        printf("z nen\n");
+        print_list(head_d);
+        print_list_pass(head_p);
         continue;
 
       default:

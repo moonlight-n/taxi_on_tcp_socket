@@ -58,10 +58,8 @@ int main(int argc, char *argv[]) {
     if (strlen(buffer) != 0) {
       printf("п: Message from server: %s\n", buffer);
     }
-    if (strcmp(buffer, "Подходящей машины нет, попробуйте позже") == 0) {
-      continue;
-    }
-    if (strcmp(buffer, "Поездка завершена") == 0) {
+    if ((strcmp(buffer, "Подходящей машины нет, попробуйте позже") == 0) ||
+        (strcmp(buffer, "Поездка завершена") == 0)) {
       continue;
     }
   }
