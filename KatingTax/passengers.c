@@ -60,10 +60,7 @@ int main(int argc, char *argv[]) {
     }
     if ((strcmp(buffer, "Подходящей машины нет, попробуйте позже") == 0) ||
         (strcmp(buffer, "Поездка завершена") == 0)) {
-      if (close(client) == -1) {
-        perror("п: Ошибка close client");
-        exit(1);
-      }
+      break;
     }
   }
 

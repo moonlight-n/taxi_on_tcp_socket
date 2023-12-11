@@ -42,11 +42,7 @@ int main(int argc, char *argv[]) {
                  (struct sockaddr *)&serv_addr, address_length) < 0) {
         perror("в: Ошибка sendto client");
         exit(1);
-
-        if (close(client) == -1) {
-          perror("в: Ошибка close client");
-          exit(1);
-        }
+        break;
       }
     } else {
       memset(buffer, 0, BUFFER);
@@ -61,7 +57,6 @@ int main(int argc, char *argv[]) {
       if (strcmp(buffer, "В базе нет такого водителя") == 0) {
         break;
       }
-
       if (strcmp(buffer, "Для вас есть заказ, ждём подтверждения") == 0) {
         if (sendto(client, "Заказ подтверждаю", BUFFER, 0,
                    (struct sockaddr *)&serv_addr, address_length) < 0) {
@@ -75,10 +70,13 @@ int main(int argc, char *argv[]) {
           exit(1);
         } else {
           howmany_trips += 1;
-          printf("B: trip is done\n");
         }
       }
     }
+  }
+  if (close(client) == -1) {
+    perror("в: Ошибка close client");
+    exit(1);
   }
   return 0;
 }

@@ -1,24 +1,14 @@
 #include "func_for_server.h"
 passengers *delete_passengers(passengers *head_p, int driver_me) {
-  printf("Зашли в функцию удаления head_p = %s, driver_me = %d\n", head_p,
-         driver_me);
-
-  passengers *prev = head_p, *current = head_p->next;
+  passengers *prev = head_p, *current = head_p;
   if (head_p == NULL) {
     return NULL;
   }
-  printf("prev = %s, prev->whos_driving_me = %d\n", prev,
-         prev->whos_driving_me);
-  printf("current = %s, current->next = %s\n", current, current->next);
   while (current && current->next) {
-    printf("Зашли в while, prev = %s, prev->whos_driving_me = %d", prev,
-           prev->whos_driving_me);
     prev = current;
     current = current->next;
-    printf("Мы ищем %d, пытаемся удалить %d\n", driver_me, current);
     if (current && current->whos_driving_me == driver_me) {
       prev->next = current->next;
-      printf("Удаляем %d\n", current);
       free(current);
     }
   }
@@ -38,7 +28,6 @@ void add_new_passengers(passengers *head_p, char *street_p_, int socket_p_) {
 }
 
 void poezdka(drivers *d) {
-  printf("\n\nERROR\n\n");
   if (strcmp(d->street_d, "B") == 0) {
     snprintf(d->street_d, sizeof(d->street_d), "A");
   } else if (strcmp(d->street_d, "A") == 0) {
@@ -46,7 +35,7 @@ void poezdka(drivers *d) {
   }
 
   d->status = 1;
-  d->trips = d->trips + 1;
+  d->trips += 1;
 }
 
 drivers *research_driver(drivers *head, char *street) {
@@ -324,6 +313,7 @@ int main() {
             perror("c: Ошибка send");
             exit(1);
           }
+          delete_passengers(head_p, p->whos_driving_me);
           if (close(client) == -1) {
             perror("c: Ошибка close client");
             exit(1);
@@ -339,12 +329,8 @@ int main() {
             exit(1);
           }
           if (strcmp(receive_message, "Заказ подтверждаю") == 0) {
-            printf("%s заказ подтвердил\n", d->driver_name);
             d->status = 0;
             p->whos_driving_me = d->socket_d;
-            printf("Поездка началась, статус водителя %s :%d\n", d->driver_name,
-                   d->status);
-
             print_list(head_d);
             char message[BUFFER];
             snprintf(message, sizeof message, "Вас повезет %s, номер машины %s",
@@ -360,22 +346,19 @@ int main() {
 
       case 3:
         d = head_d;
-        printf("\n ДО ОКОНЧАНИЯ ПОЕЗДКИ\n");
-        print_list(head_d);
-        print_list_pass(head_p);
-        printf("сокет водителя = %d\n", client);
+        p = head_p;
         while (d != NULL && d->socket_d != client) {
           d = d->next;
         }
-        if (d == NULL) printf("poshel nahui\n");
         poezdka(d);
-        printf("\n ВО ВРЕМЯ ПОЕЗДКИ\n");
-        print_list(head_d);
-        print_list_pass(head_p);
+        while (p->whos_driving_me != client) {
+          p = p->next;
+        }
+        if (send(p->socket_p, "Поездка завершена", BUFFER, 0) == -1) {
+          perror("c: Ошибка send");
+          exit(1);
+        }
         delete_passengers(head_p, d->socket_d);
-        printf("\n ПОСЛЕ ОКОНЧАНИЯ ПОЕЗДКИ\n");
-        print_list(head_d);
-        print_list_pass(head_p);
         continue;
       case 4:
         drivers *y = head_d;
@@ -389,6 +372,7 @@ int main() {
           exit(1);
         }
         y->socket_d = 0;
+        y->trips = 0;
         print_list(head_d);
         continue;
 
