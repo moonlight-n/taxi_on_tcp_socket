@@ -14,10 +14,9 @@ sleep 1
 #./driver Геннадий х777хх&
 #sleep 1
 #./driver Галина у511ум &
-sleep 4
 ./passengers A &
 #sleep 4
-./passengers A &
+./passengers A 
 #sleep 14
 #./passengers B &
 #sleep 13 

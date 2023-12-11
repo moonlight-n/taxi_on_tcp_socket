@@ -10,6 +10,9 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #define BUFFER 1024
+#define MAX_TRIP 2
+#define TRAVEL_TIME 3
+#define max(x, y) ((x) > (y) ? (x) : (y))
 
 typedef struct drivers_s {
   int number;             // порядковый номер водителя
@@ -29,6 +32,6 @@ typedef struct passenger_s {
   struct passengers_s *next;
 } passengers;
 
-#define max(x, y) ((x) > (y) ? (x) : (y))
+void print_list_pass(passengers *head);
 
 #endif /*FUNC_FOR_SERVER_H*/

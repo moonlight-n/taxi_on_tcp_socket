@@ -1,10 +1,11 @@
-#include "func_for_driver.h"
+#include "func_for_server.h"
 
 int main(int argc, char *argv[]) {
   if (argc != 3) {
     printf("в: Повторите вход в приложение используя имя и номер машины\n");
     exit(1);
   }
+  int howmany_trips = 0;
   int client = 0;
   struct sockaddr_in serv_addr;
   socklen_t address_length = sizeof(serv_addr);
@@ -36,38 +37,48 @@ int main(int argc, char *argv[]) {
   }
 
   while (1) {
-    memset(buffer, 0, BUFFER);
-    if (recvfrom(client, buffer, BUFFER, 0, (struct sockaddr *)&serv_addr,
-                 &address_length) < 0) {
-      perror("в: Ошибка recvfrom");
-      exit(1);
-    }
-    if (strlen(buffer) != 0) {
-      printf("в: Message from server: %s\n", buffer);
-    }
-    if (strcmp(buffer, "В базе нет такого водителя") == 0) {
-      break;
-    }
-
-    if (strcmp(buffer, "Для вас есть заказ, ждём подтверждения") == 0) {
-      if (sendto(client, "Заказ подтверждаю", BUFFER, 0,
+    if (howmany_trips == MAX_TRIP) {
+      if (sendto(client, "4.Я заканчиваю смену", BUFFER, 0,
                  (struct sockaddr *)&serv_addr, address_length) < 0) {
         perror("в: Ошибка sendto client");
         exit(1);
+
+        if (close(client) == -1) {
+          perror("в: Ошибка close client");
+          exit(1);
+        }
       }
-      sleep(10);
-      if (sendto(client, "3.Поездка завершена", BUFFER, 0,
-                 (struct sockaddr *)&serv_addr, address_length) < 0) {
-        perror("в: Ошибка sendto client");
+    } else {
+      memset(buffer, 0, BUFFER);
+      if (recvfrom(client, buffer, BUFFER, 0, (struct sockaddr *)&serv_addr,
+                   &address_length) < 0) {
+        perror("в: Ошибка recvfrom");
         exit(1);
-      } else {
-        printf("B: trip is donen\n");
+      }
+      if (strlen(buffer) != 0) {
+        printf("в: Message from server: %s\n", buffer);
+      }
+      if (strcmp(buffer, "В базе нет такого водителя") == 0) {
+        break;
+      }
+
+      if (strcmp(buffer, "Для вас есть заказ, ждём подтверждения") == 0) {
+        if (sendto(client, "Заказ подтверждаю", BUFFER, 0,
+                   (struct sockaddr *)&serv_addr, address_length) < 0) {
+          perror("в: Ошибка sendto client");
+          exit(1);
+        }
+        sleep(TRAVEL_TIME);
+        if (sendto(client, "3.Поездка завершена", BUFFER, 0,
+                   (struct sockaddr *)&serv_addr, address_length) < 0) {
+          perror("в: Ошибка sendto client");
+          exit(1);
+        } else {
+          howmany_trips += 1;
+          printf("B: trip is done\n");
+        }
       }
     }
   }
-
-  if (close(client) == -1) {
-    perror("в: Ошибка close client");
-    exit(1);
-  }
+  return 0;
 }

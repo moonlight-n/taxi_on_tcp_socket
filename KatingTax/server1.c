@@ -1,22 +1,60 @@
 #include "func_for_server.h"
+passengers *delete_passengers(passengers *head_p, int driver_me) {
+  printf("Зашли в функцию удаления head_p = %s, driver_me = %d\n", head_p,
+         driver_me);
 
-int poezdka(drivers *d) {
+  passengers *prev = head_p, *current = head_p->next;
+  if (head_p == NULL) {
+    return NULL;
+  }
+  printf("prev = %s, prev->whos_driving_me = %d\n", prev,
+         prev->whos_driving_me);
+  printf("current = %s, current->next = %s\n", current, current->next);
+  while (current && current->next) {
+    printf("Зашли в while, prev = %s, prev->whos_driving_me = %d", prev,
+           prev->whos_driving_me);
+    prev = current;
+    current = current->next;
+    printf("Мы ищем %d, пытаемся удалить %d\n", driver_me, current);
+    if (current && current->whos_driving_me == driver_me) {
+      prev->next = current->next;
+      printf("Удаляем %d\n", current);
+      free(current);
+    }
+  }
+  return head_p;
+}
+void add_new_passengers(passengers *head_p, char *street_p_, int socket_p_) {
+  passengers *p = (passengers *)malloc(sizeof(passengers));
+  snprintf(p->street_p, sizeof(p->street_p), "%s", street_p_);
+  p->socket_p = socket_p_;
+  p->whos_driving_me = 0;
+  p->next = NULL;
+  passengers *tmp = head_p;
+  while (tmp->next != NULL) {
+    tmp = tmp->next;
+  }
+  tmp->next = p;
+}
+
+void poezdka(drivers *d) {
+  printf("\n\nERROR\n\n");
   if (strcmp(d->street_d, "B") == 0) {
     snprintf(d->street_d, sizeof(d->street_d), "A");
   } else if (strcmp(d->street_d, "A") == 0) {
     snprintf(d->street_d, sizeof(d->street_d), "B");
   }
 
+  d->status = 1;
   d->trips = d->trips + 1;
-
-  return 0;
 }
 
 drivers *research_driver(drivers *head, char *street) {
   drivers *d = head;
 
   while (d != NULL) {
-    if (d->status == 1 && (strcmp(street, d->street_d) && d->trips < 10) == 0) {
+    if (d->status == 1 &&
+        (strcmp(street, d->street_d) && d->trips < MAX_TRIP) == 0) {
       return d;
       break;
     }
@@ -108,8 +146,8 @@ passengers *create_p() {
 void print_list_pass(passengers *head) {
   passengers *p = head;
   int i = 1;
+  printf("\n\t\t пассажиры \t\t\n");
   while (p != NULL) {
-    printf("\n\t\t пассажиры \t\t\n");
     printf("%d. ", i);
     printf("%s \t", p->street_p);
     printf("%d \t", p->socket_p);
@@ -139,7 +177,6 @@ void print_list(drivers *head) {
 int main() {
   drivers *head_d = create_d();
   passengers *head_p = create_p();
-  print_list(head_d);
   int yes = 1;  // для использования порта заново
   int server = 0, client = 0;
   struct sockaddr_in server_addr, client_addr;
@@ -265,11 +302,15 @@ int main() {
         continue;
 
       case 2:
-        print_list(head_d);
         passengers *p = head_p;
-        p->socket_p = client;
+        print_list_pass(head_p);
         char *street_where_p = strtok(NULL, ".");
+        add_new_passengers(head_p, street_where_p, client);
         snprintf(p->street_p, sizeof(p->street_p), street_where_p);
+        print_list_pass(head_p);
+        while (p != NULL && p->socket_p != client) {
+          p = p->next;
+        }
 
         if (send(p->socket_p, "Заказ принят, идёт поиск машины", BUFFER, 0) ==
             -1) {
@@ -314,16 +355,41 @@ int main() {
               exit(1);
             }
           }
-          print_list(head_d);
-          print_list_pass(head_p);
         }
         continue;
 
       case 3:
-        int trip = poezdka(d);
-        printf("z nen\n");
+        d = head_d;
+        printf("\n ДО ОКОНЧАНИЯ ПОЕЗДКИ\n");
         print_list(head_d);
         print_list_pass(head_p);
+        printf("сокет водителя = %d\n", client);
+        while (d != NULL && d->socket_d != client) {
+          d = d->next;
+        }
+        if (d == NULL) printf("poshel nahui\n");
+        poezdka(d);
+        printf("\n ВО ВРЕМЯ ПОЕЗДКИ\n");
+        print_list(head_d);
+        print_list_pass(head_p);
+        delete_passengers(head_p, d->socket_d);
+        printf("\n ПОСЛЕ ОКОНЧАНИЯ ПОЕЗДКИ\n");
+        print_list(head_d);
+        print_list_pass(head_p);
+        continue;
+      case 4:
+        drivers *y = head_d;
+        while (y->socket_d != client) {
+          y = y->next;
+        }
+        y->status = 0;
+        printf("Водитель %s закончил смену\n", d->driver_name);
+        if (close(client) == -1) {
+          perror("c: Ошибка close client");
+          exit(1);
+        }
+        y->socket_d = 0;
+        print_list(head_d);
         continue;
 
       default:
