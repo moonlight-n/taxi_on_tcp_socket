@@ -1,4 +1,4 @@
-#include "func_for_server.h"
+#include "header.h"
 
 int main(int argc, char *argv[]) {
   if (argc != 3) {
@@ -42,8 +42,8 @@ int main(int argc, char *argv[]) {
                  (struct sockaddr *)&serv_addr, address_length) < 0) {
         perror("в: Ошибка sendto client");
         exit(1);
-        break;
       }
+      break;
     } else {
       memset(buffer, 0, BUFFER);
       if (recvfrom(client, buffer, BUFFER, 0, (struct sockaddr *)&serv_addr,

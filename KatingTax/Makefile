@@ -1,10 +1,10 @@
 all :  server driver passengers        
 
-server : server1.o
-	gcc server1.o -o server
+server : server.o
+	gcc server.o -o server
 	
-server1.o : server1.c
-	gcc -c -g -Wall -Wextra -std=c99 server1.c
+server.o : server.c
+	gcc -c -g -std=c99 server.c
 	
 driver : driver.o
 	gcc driver.o -o driver

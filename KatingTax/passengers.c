@@ -1,4 +1,4 @@
-#include "func_for_driver.h"
+#include "header.h"
 
 int main(int argc, char *argv[]) {
   if (!(argc == 2 &&
@@ -6,6 +6,7 @@ int main(int argc, char *argv[]) {
     printf("Войдите с использованием улицы, на которой находитесь(A/B)");
     exit(1);
   }
+
   int client = 0;
   struct sockaddr_in serv_addr;
   socklen_t address_length = sizeof(serv_addr);
